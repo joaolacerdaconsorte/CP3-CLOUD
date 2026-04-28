@@ -1,0 +1,62 @@
+# ========================================
+# VaultBank — Docker Compose
+# Dois containers: MySQL + Spring Boot API
+# ========================================
+# Aluno: João Vitor Lacerda Consorte
+# FIAP — 2TDSPW 2026 — CP2 DevOps
+# ========================================
+
+services:
+  # ---- Container 1: Banco de Dados MySQL ----
+  mysql:
+    image: mysql:8.0
+    container_name: vaultbank-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root@vault2026
+      MYSQL_DATABASE: vaultbank
+      MYSQL_USER: vaultbank
+      MYSQL_PASSWORD: vault@2026
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./mysql/init:/docker-entrypoint-initdb.d
+    networks:
+      - vaultbank-net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # ---- Container 2: API Spring Boot ----
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: vaultbank-api
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      MYSQL_DATABASE: vaultbank
+      MYSQL_USER: vaultbank
+      MYSQL_PASSWORD: vault@2026
+    ports:
+      - "8080:8080"
+    networks:
+      - vaultbank-net
+
+volumes:
+  mysql_data:
+    driver: local
+
+networks:
+  vaultbank-net:
+    driver: bridge
