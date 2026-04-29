@@ -1,210 +1,231 @@
-# 🏦 VaultBank API — CP2 DevOps
+# VaultBank API 🏦
 
-> **API REST bancária fictícia** desenvolvida para o CP2 de DevOps, composta por uma API em **Spring Boot 3.2**, banco de dados **MySQL 8.0** e containers **Docker**, pronta para deploy em **Oracle OCI / Azure / Google Cloud**.
+API REST de um banco fictício feita com **Spring Boot + MySQL**, rodando em containers Docker e deployada em uma VM na Azure.
 
-**Aluno:** João Vitor Lacerda Consorte  
-**Turma:** 2TDSPW — FIAP 2026  
+Projeto do **CP3 — DevOps & Cloud** da FIAP, turma 2TDSPW 2026.
+
+## Integrantes
+
+- **João Vitor Lacerda Consorte** — RM 565565
+- **Murillo Fernandes Carapia** — RM 564969
 
 ---
 
-## 📐 Arquitetura
+## O que é
+
+Uma API bancária simples com CRUD de contas e transações. O objetivo era dockerizar a aplicação e subir numa VM na Azure, mostrando que tudo funciona em cloud.
+
+### Tecnologias usadas
+
+- Java 17 + Spring Boot 3.2.5
+- MySQL 8.0 (container Docker)
+- Docker + Docker Compose
+- Azure VM (Ubuntu 24.04)
+
+---
+
+## Deploy na Azure ☁️
+
+A API está rodando na Azure nesse endereço:
+
+| Recurso | URL |
+|---------|-----|
+| **Swagger UI** | http://20.225.41.26:8080/swagger-ui.html |
+| **API Base** | http://20.225.41.26:8080/api/ |
+| **Health Check** | http://20.225.41.26:8080/actuator/health |
+
+### Infra
+
+- **VM:** `vm-vaultbank-cp3` (Standard_B2pls_v2 — 2 vCPU, 4GB RAM)
+- **Região:** South Central US
+- **Resource Group:** `vm-devops_group`
+- **OS:** Ubuntu 24.04
+- **Containers:** 2 (api + mysql)
+
+---
+
+## Arquitetura
 
 ```
-┌──────────────────────────────────────────────────────┐
-│                    Cloud VM (OCI/Azure/GCP)           │
-│                                                      │
-│  ┌──────────────────┐    ┌──────────────────────┐   │
-│  │  Container MySQL  │◄──►│  Container Spring Boot│   │
-│  │    (porta 3306)   │    │    (porta 8080)       │   │
-│  │                   │    │                       │   │
-│  │  • vaultbank DB   │    │  • REST API CRUD      │   │
-│  │  • Dados persist. │    │  • Swagger UI          │   │
-│  │  • UTF-8          │    │  • Health Checks       │   │
-│  └──────────────────┘    └──────────────────────┘   │
-│           Docker Compose Network                     │
-└──────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────┐
+│              Azure VM                     │
+│                                          │
+│  ┌─────────────┐    ┌─────────────────┐  │
+│  │  MySQL 8.0  │◄───│  Spring Boot    │  │
+│  │  porta 3306 │    │  porta 8080     │  │
+│  └─────────────┘    └─────────────────┘  │
+│                                          │
+│         Docker Compose Network           │
+└──────────────────────────────────────────┘
+                     ▲
+                     │ HTTP :8080
+                     │
+              Requisições externas
 ```
 
 ---
 
-## 🚀 Tecnologias
+## Endpoints da API
 
-| Camada          | Tecnologia             |
-|-----------------|------------------------|
-| **Backend**     | Java 17 + Spring Boot 3.2.5 |
-| **ORM**         | Spring Data JPA + Hibernate |
-| **Banco de Dados** | MySQL 8.0 (container) |
-| **Documentação** | SpringDoc OpenAPI (Swagger) |
-| **Containers**  | Docker + Docker Compose |
-| **Build**       | Maven 3.9 (multi-stage) |
-| **Cloud**       | Oracle OCI / Azure / GCP |
+Base URL: `http://20.225.41.26:8080`
 
----
+### Contas
 
-## 📋 Endpoints da API
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| GET | `/api/contas` | Lista todas as contas |
+| GET | `/api/contas/{id}` | Busca conta por ID |
+| POST | `/api/contas` | Cria nova conta |
+| PUT | `/api/contas/{id}` | Atualiza conta |
+| DELETE | `/api/contas/{id}` | Deleta conta |
+| PATCH | `/api/contas/{id}/desativar` | Desativa conta |
 
-### 🏦 Contas (`/api/contas`)
+### Transações
 
-| Método  | Endpoint                   | Descrição                          |
-|---------|----------------------------|------------------------------------|
-| `GET`   | `/api/contas`              | Listar todas as contas             |
-| `GET`   | `/api/contas/{id}`         | Buscar conta por ID                |
-| `GET`   | `/api/contas/buscar?nome=` | Buscar por nome do titular         |
-| `GET`   | `/api/contas/tipo/{tipo}`  | Filtrar por tipo de conta          |
-| `POST`  | `/api/contas`              | Criar nova conta                   |
-| `PUT`   | `/api/contas/{id}`         | Atualizar dados da conta           |
-| `PATCH` | `/api/contas/{id}/desativar` | Desativar conta (soft delete)    |
-| `DELETE`| `/api/contas/{id}`         | Deletar conta permanentemente      |
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| GET | `/api/contas/{contaId}/transacoes` | Lista transações da conta |
+| GET | `/api/contas/{contaId}/transacoes/{id}` | Busca transação por ID |
+| POST | `/api/contas/{contaId}/transacoes` | Cria transação |
+| DELETE | `/api/contas/{contaId}/transacoes/{id}` | Deleta transação |
 
-### 💳 Transações (`/api/contas/{contaId}/transacoes`)
+### Status
 
-| Método  | Endpoint                                  | Descrição                   |
-|---------|-------------------------------------------|-----------------------------|
-| `GET`   | `/api/contas/{contaId}/transacoes`        | Listar transações da conta  |
-| `GET`   | `/api/contas/{contaId}/transacoes/{id}`   | Buscar transação por ID     |
-| `POST`  | `/api/contas/{contaId}/transacoes`        | Criar nova transação        |
-| `DELETE`| `/api/contas/{contaId}/transacoes/{id}`   | Deletar transação           |
-
-### Tipos de Transação
-`DEPOSITO` | `SAQUE` | `TRANSFERENCIA` | `PIX` | `PAGAMENTO`
-
-### Tipos de Conta
-`CORRENTE` | `POUPANCA` | `INVESTIMENTO`
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| GET | `/actuator/health` | Health check |
 
 ---
 
-## 🐳 Como Executar
+## Testando os endpoints
 
-### Opção 1: Docker Compose (Recomendado)
+Pode testar direto no Swagger (`/swagger-ui.html`) ou pelo terminal com curl.
 
+### Listar todas as contas
 ```bash
-# Clonar o repositório
-git clone <repo-url>
-cd CP3-CLOUD
-
-# Subir os dois containers
-docker compose up -d --build
-
-# Verificar status
-docker compose ps
-
-# Ver logs
-docker compose logs -f api
+curl http://20.225.41.26:8080/api/contas
 ```
 
-**Acesse:**
-- API: `http://localhost:8080`
-- Swagger UI: `http://localhost:8080/swagger-ui.html`
-- H2 Console: Desabilitado no modo Docker
-
-### Opção 2: Standalone (sem Docker)
-
+### Buscar conta por ID
 ```bash
-# Compilar
-mvn clean package -DskipTests
-
-# Executar com H2 (banco em memória)
-java -jar target/vaultbank-1.0.0.jar
-
-# Ou com MySQL local
-java -jar target/vaultbank-1.0.0.jar --spring.profiles.active=docker
+curl http://20.225.41.26:8080/api/contas/1
 ```
 
----
-
-## ☁️ Deploy em VM Cloud
-
-### 1. Criar VM (Oracle OCI / Azure)
-
-- **OCI:** Compute → Create Instance → Ubuntu 22.04 → Always Free
-- **Azure:** Virtual Machine → Ubuntu 22.04 → Standard B1s
-
-### 2. Configurar a VM
-
+### Criar nova conta
 ```bash
-# Conectar via SSH
-ssh -i <chave.pem> ubuntu@<IP-DA-VM>
-
-# Executar script de setup
-chmod +x setup-vm.sh
-./setup-vm.sh
-
-# Logout e login para aplicar grupo docker
-exit
-ssh -i <chave.pem> ubuntu@<IP-DA-VM>
-```
-
-### 3. Deploy da Aplicação
-
-```bash
-git clone <repo-url>
-cd CP3-CLOUD
-docker compose up -d --build
-```
-
-### 4. Liberar Portas
-
-- **OCI:** Security List → Ingress Rules → Porta 8080
-- **Azure:** NSG → Inbound Rules → Porta 8080
-
----
-
-## 📝 Exemplos de Uso
-
-### Criar conta
-
-```bash
-curl -X POST http://localhost:8080/api/contas \
+curl -X POST http://20.225.41.26:8080/api/contas \
   -H "Content-Type: application/json" \
   -d '{
-    "titular": "Novo Aluno FIAP",
-    "cpf": "44455566677",
-    "email": "aluno@fiap.com.br",
+    "titular": "Fulano de Tal",
+    "cpf": "11122233344",
+    "email": "fulano@email.com",
     "tipo": "CORRENTE",
     "saldoInicial": 1000.00
   }'
 ```
 
-### Fazer depósito
-
+### Atualizar conta
 ```bash
-curl -X POST http://localhost:8080/api/contas/1/transacoes \
+curl -X PUT http://20.225.41.26:8080/api/contas/1 \
+  -H "Content-Type: application/json" \
+  -d '{
+    "titular": "João Atualizado",
+    "email": "joao.novo@email.com"
+  }'
+```
+
+### Deletar conta
+```bash
+curl -X DELETE http://20.225.41.26:8080/api/contas/1
+```
+
+### Criar transação
+```bash
+curl -X POST http://20.225.41.26:8080/api/contas/2/transacoes \
   -H "Content-Type: application/json" \
   -d '{
     "tipo": "DEPOSITO",
-    "valor": 5000.00,
-    "descricao": "Depósito inicial"
+    "valor": 500.00,
+    "descricao": "Deposito teste"
   }'
 ```
 
-### Fazer PIX
+### Listar transações de uma conta
+```bash
+curl http://20.225.41.26:8080/api/contas/2/transacoes
+```
+
+### Health check
+```bash
+curl http://20.225.41.26:8080/actuator/health
+```
+
+---
+
+## Rodando local
+
+Se quiser rodar no seu PC, só precisa ter Docker instalado.
 
 ```bash
-curl -X POST http://localhost:8080/api/contas/1/transacoes \
-  -H "Content-Type: application/json" \
-  -d '{
-    "tipo": "PIX",
-    "valor": 150.00,
-    "descricao": "PIX para restaurante"
-  }'
+git clone https://github.com/joaolacerdaconsorte/CP3-CLOUD.git
+cd CP3-CLOUD
+docker compose up -d --build
+```
+
+Depois é só acessar: http://localhost:8080/swagger-ui.html
+
+Para parar:
+```bash
+docker compose down
 ```
 
 ---
 
-## 🗃️ Dados Iniciais
+## Estrutura do projeto
 
-A aplicação já vem com **5 contas** e **10 transações** pré-cadastradas para demonstração:
-
-| # | Titular                        | Tipo         | Saldo        | Status |
-|---|--------------------------------|-------------|--------------|--------|
-| 1 | João Vitor Lacerda Consorte    | CORRENTE    | R$ 15.750,00 | Ativa  |
-| 2 | Maria Silva                    | POUPANCA    | R$ 42.300,50 | Ativa  |
-| 3 | Carlos Oliveira                | INVESTIMENTO| R$ 125.000,00| Ativa  |
-| 4 | Ana Beatriz Ferreira           | CORRENTE    | R$ 0,00      | Inativa|
-| 5 | Pedro Santos                   | CORRENTE    | R$ 8.920,75  | Ativa  |
+```
+CP3-CLOUD/
+├── src/                          # Código fonte Java
+│   └── main/
+│       ├── java/.../vaultbank/
+│       │   ├── controller/       # Controllers REST
+│       │   ├── model/            # Entidades JPA (Conta, Transacao)
+│       │   ├── repository/       # Repositórios Spring Data
+│       │   ├── service/          # Regras de negócio
+│       │   ├── dto/              # Objetos de request/response
+│       │   ├── config/           # Configurações (Swagger, DataLoader)
+│       │   └── exception/        # Tratamento de erros
+│       └── resources/
+│           ├── application.yml           # Config padrão
+│           └── application-docker.yml    # Config pro container
+├── mysql/init/                   # Script SQL de seed
+├── Dockerfile                    # Build multi-stage da API
+├── docker-compose.yml            # Orquestração dos containers
+├── setup-vm.sh                   # Script de setup da VM
+└── pom.xml                       # Dependências Maven
+```
 
 ---
 
-## 📄 Licença
+## Docker Compose
 
-Projeto acadêmico — FIAP 2TDSPW 2026.
+O projeto sobe 2 containers:
+
+1. **vaultbank-mysql** — Banco MySQL 8.0 com dados iniciais (5 contas + 10 transações)
+2. **vaultbank-api** — API Spring Boot conectada ao MySQL
+
+Os containers estão na mesma rede Docker (`vaultbank-net`) e o MySQL tem health check configurado pra API só subir quando o banco estiver pronto.
+
+---
+
+## Banco de Dados
+
+O banco é **MySQL 8.0** rodando em container Docker. Nada de H2 ou banco em memória — a aplicação conecta num MySQL real, tanto local quanto na Azure.
+
+As tabelas são criadas automaticamente pelo Hibernate (JPA) e os dados iniciais são carregados pelo `DataLoader` na inicialização.
+
+### Dados de seed
+
+Na primeira execução, o sistema já cria automaticamente:
+- 5 contas bancárias (corrente, poupança, investimento)
+- 10 transações de exemplo (depósitos, saques, PIX, TED)
