@@ -7,7 +7,6 @@ Projeto do **CP3 — DevOps & Cloud** da FIAP, turma 2TDSPW 2026.
 ## Integrantes
 
 - **João Vitor Lacerda Consorte** — RM 565565
-- **Murillo Fernandes Carapia** — RM 564969
 
 ---
 
